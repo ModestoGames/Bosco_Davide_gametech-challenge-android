@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Bosco_Davide_gametech-challenge-android"
 include(":app")
+include(":notification_module")
