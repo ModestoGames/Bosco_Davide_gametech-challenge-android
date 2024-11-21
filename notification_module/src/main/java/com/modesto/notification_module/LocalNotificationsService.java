@@ -83,6 +83,11 @@ public class LocalNotificationsService extends UnityService{
         return dto;
     }
 
+    public long getCurrentSystemTime()
+    {
+        return SystemClock.elapsedRealtime();
+    }
+
     public  String getNotificationAsString(){
         return  NotificationStore.getAllNotificationsAsString();
     }
@@ -96,7 +101,7 @@ public class LocalNotificationsService extends UnityService{
     }
 
     //iterate over scheduled notification work id and delete them all
-    public void deleteAllScheduledNotifications() {
-        NotificationStore.deleteAll();
-    }
+    //public void deleteAllScheduledNotifications() {
+     //   NotificationStore.deleteAll();
+    //}
 }

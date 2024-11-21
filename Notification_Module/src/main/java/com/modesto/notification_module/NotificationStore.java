@@ -25,13 +25,13 @@ public class NotificationStore {
         scheduledNotifications.remove(id);
     }
 
-    public  static void deleteAll(){
+ /**   public  static void deleteAll(){
         //create a list for iteration to avoid ConcurrentModificationException
         List<Integer> ids = new ArrayList<>(scheduledNotifications.keySet());
         for (Integer id : ids) {
             removeNotification(id);
         }
-    }
+    }**/
 
     public static String getAllNotificationsAsString() {
         StringBuilder sb = new StringBuilder();
