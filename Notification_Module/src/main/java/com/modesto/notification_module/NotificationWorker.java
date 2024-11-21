@@ -42,10 +42,10 @@ public class NotificationWorker extends Worker {
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             // Add extra data for Unity integration
             intent.putExtra("notification_id", id);
-            intent.putExtra("notification_title", getTitle(id));
-            intent.putExtra("notification_text", getText(id));
+            intent.putExtra("notification_title", Utils.getTitle(id));
+            intent.putExtra("notification_text", Utils.getText(id));
             intent.putExtra("package_name", "com.modesto.notification_module");
-            intent.putExtra("resource_name", getIconName(id));
+            intent.putExtra("icon", String.valueOf(Utils.getIcon(context, id)));
             intent.putExtra("notification_timestamp", System.currentTimeMillis());
         }
 
@@ -59,59 +59,12 @@ public class NotificationWorker extends Worker {
 
         // Build the notification with a title, text, icon, and tap action
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, Constants.CHANNEL_ID)
-                .setContentTitle(getTitle(id))
-                .setContentText(getText(id))
-                .setSmallIcon(getIcon(id))
+                .setContentTitle(Utils.getTitle(id))
+                .setContentText(Utils.getText(id))
+                .setSmallIcon(Utils.getIcon(context, id))
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
 
         _notificationManager.notify(id, builder.build());
-    }
-
-    // Utility methods for notification building
-    @NonNull
-    @SuppressLint("DefaultLocale")
-    private  String getTitle(int id){
-        return String.format("Character Unlocked %d", id);
-    }
-
-    @NonNull
-    @SuppressLint("DefaultLocale")
-    private  String getText(int id){
-        return String.format("You have unlocked character %d", id);
-    }
-
-    private int getIcon(int id){
-        switch (id){
-            case 1:
-                return com.modesto.notification_module.R.drawable.ic_stat_char_1;
-            case 2:
-                return com.modesto.notification_module.R.drawable.ic_stat_char_2;
-            case 3:
-                return com.modesto.notification_module.R.drawable.ic_stat_char_3;
-            case 4:
-                return com.modesto.notification_module.R.drawable.ic_stat_char_4;
-            case 5:
-               return com.modesto.notification_module.R.drawable.ic_stat_char_5;
-            default:
-                return android.R.drawable.ic_notification_overlay;
-        }
-    }
-
-    private String getIconName(int id){
-        switch (id){
-            case 1:
-                return "ic_stat_char_1";
-            case 2:
-                return "ic_stat_char_2";
-            case 3:
-                return "ic_stat_char_3";
-            case 4:
-                return "ic_stat_char_4";
-            case 5:
-                return "ic_stat_char_5";
-            default:
-                return "ic_notification_overlay";
-        }
     }
 }

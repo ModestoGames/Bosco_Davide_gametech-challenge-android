@@ -17,6 +17,13 @@ android {
         androidResources = true
     }
 
+    sourceSets {
+        getByName("main") {
+            resources.srcDirs("src/main/res")
+        }
+    }
+
+
     buildTypes {
         release {
             isMinifyEnabled = false
