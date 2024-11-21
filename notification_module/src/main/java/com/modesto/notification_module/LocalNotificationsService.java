@@ -53,7 +53,7 @@ public class LocalNotificationsService extends UnityService{
         }
     }
 
-    public void scheduleNotification(int id, int delayMinutes) {
+    public NotificationDTO scheduleNotification(int id, int delayMinutes) {
         // Create a one-time work request with the delay specified.
         OneTimeWorkRequest notificationWork = new OneTimeWorkRequest.Builder(NotificationWorker.class)
             .setInitialDelay(delayMinutes, TimeUnit.MINUTES)
@@ -80,6 +80,7 @@ public class LocalNotificationsService extends UnityService{
         NotificationStore.addNotification(id, dto);
         // Enqueue the work request to WorkManager.
         WorkManager.getInstance(_unityActivity).enqueue(notificationWork);
+        return dto;
     }
 
     public  String getNotificationAsString(){

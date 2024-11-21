@@ -5,7 +5,7 @@ import java.util.UUID;
 public class NotificationDTO
 {
     private  int status;
-    private UUID workUUID;
+    private String workUUID;
     private String title;
     private  String text;
     private int iconId;
@@ -17,7 +17,7 @@ public class NotificationDTO
     public NotificationDTO(UUID workUUID, String title, String text, int iconId, long creationTime, long schedulationTime)
     {
         this.status = 0;
-        this.workUUID = workUUID;
+        this.workUUID = workUUID.toString();
         this.title = title;
         this.text = text;
         this.iconId = iconId;
@@ -25,8 +25,36 @@ public class NotificationDTO
         this.schedulationTime = schedulationTime;
     }
 
-    public  UUID getWorkUUID(){
-        return  workUUID;
+    public int getStatus() {
+        return status;
+    }
+
+    public String getUUIDToString() {
+        return workUUID;
+    }
+
+    public UUID getWorkUUID(){
+        return  UUID.fromString(workUUID);
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public int getIconId() {
+        return iconId;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    public long getSchedulationTime() {
+        return schedulationTime;
     }
 
     @Override
