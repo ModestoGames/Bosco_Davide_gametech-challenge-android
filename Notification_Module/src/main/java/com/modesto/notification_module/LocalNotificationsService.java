@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Build;
 import android.os.SystemClock;
+import android.util.Log;
 
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
@@ -26,9 +27,6 @@ public class LocalNotificationsService extends UnityService{
         super(unityActivity);
     }
 
-    //keep track of the scheduled notifications to handle them during app runtime
-    //private Map<Integer, UUID> scheduledNotifications = new HashMap<>();
-    //private Map<Integer, NotificationDTO> scheduledNotification = new
     /**
      * Initializes the service. Creates a notification channel if the device is running
      * Android Oreo (API 26) or above. Channels are mandatory for notifications on these versions.
@@ -83,6 +81,8 @@ public class LocalNotificationsService extends UnityService{
         return dto;
     }
 
+
+
     public long getCurrentSystemTime()
     {
         return SystemClock.elapsedRealtime();
@@ -100,8 +100,48 @@ public class LocalNotificationsService extends UnityService{
         NotificationStore.removeNotification(id);
     }
 
-    //iterate over scheduled notification work id and delete them all
-    //public void deleteAllScheduledNotifications() {
-     //   NotificationStore.deleteAll();
-    //}
+    public void switchNotificationSchedule(int startIndex, int destinationIndex)
+    {
+        //tiro su i dto startIndex e destIndex (es: 1 - 4)
+        NotificationDTO dto1 = NotificationStore.getNotification(startIndex);
+        NotificationDTO dto2 = NotificationStore.getNotification(destinationIndex);
+
+        long dto1RemainingMilliseconds = dto1.getSchedulationTime() - dto1.getCreationTime();
+        long dto2RemainingMilliseconds = dto2.getSchedulationTime() - dto2.getCreationTime();
+
+        //elimino work e dto con indice 1 - 4
+        deleteScheduledNotification(startIndex);
+        deleteScheduledNotification(destinationIndex);
+
+        reScheduleNotification(destinationIndex, dto1RemainingMilliseconds);
+        reScheduleNotification(startIndex, dto2RemainingMilliseconds);
+    }
+
+    public void reScheduleNotification(int id, long delayMilliseconds) {
+        OneTimeWorkRequest notificationWork = new OneTimeWorkRequest.Builder(NotificationWorker.class)
+                .setInitialDelay(delayMilliseconds, TimeUnit.MILLISECONDS)
+                .setInputData(
+                        new androidx.work.Data.Builder()
+                                .putInt("id", id)
+                                .build()
+                )
+                .build();
+
+        //create a DTO to keep track of the scheduled notification
+        NotificationDTO dto = new NotificationDTO(
+                notificationWork.getId(),
+                Utils.getTitle(id),
+                Utils.getText(id),
+                Utils.getIcon(id),
+                //get the current time in milliseconds
+                SystemClock.elapsedRealtime(),
+                //get the schedulation time by adding remaining milliseconds
+                SystemClock.elapsedRealtime() + delayMilliseconds
+        );
+
+        //cache reference to the scheduledNotification list
+        NotificationStore.addNotification(id, dto);
+        // Enqueue the work request to WorkManager.
+        WorkManager.getInstance(_unityActivity).enqueue(notificationWork);
+    }
 }

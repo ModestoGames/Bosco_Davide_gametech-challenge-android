@@ -43,9 +43,6 @@ public class NotificationWorker extends Worker {
             intent.putExtra("notification_id", id);
             intent.putExtra("notification_title", Utils.getTitle(id));
             intent.putExtra("notification_text", Utils.getText(id));
-            intent.putExtra("package_name", "com.modesto.notification_module");
-            intent.putExtra("icon", String.valueOf(Utils.getIcon(id)));
-            intent.putExtra("notification_timestamp", System.currentTimeMillis());
         }
 
         // Create a PendingIntent for the notification's tap action
