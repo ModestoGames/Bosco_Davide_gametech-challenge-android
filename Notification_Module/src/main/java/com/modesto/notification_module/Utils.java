@@ -22,7 +22,7 @@ public class Utils {
         return String.format("You have unlocked character %d", id);
     }
 
-    public static int getIcon(Context context, int id){
+    public static int getIcon(int id){
 
         switch (id){
             case 1:
@@ -54,9 +54,8 @@ public class Utils {
     }
 
     private static Bitmap getBitmap(Context context, int id){
-        int iconId = getIcon(context, id);
+        int iconId = getIcon(id);
         Resources resources = context.getResources();
-        Bitmap bitmap = BitmapFactory.decodeResource(resources, iconId);
-        return  bitmap;
+        return BitmapFactory.decodeResource(resources, iconId);
     }
 }

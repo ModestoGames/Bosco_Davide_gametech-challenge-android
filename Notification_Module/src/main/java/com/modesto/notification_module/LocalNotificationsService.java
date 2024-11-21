@@ -5,6 +5,8 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Build;
+import android.os.SystemClock;
+
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
@@ -25,7 +27,8 @@ public class LocalNotificationsService extends UnityService{
     }
 
     //keep track of the scheduled notifications to handle them during app runtime
-    private Map<Integer, UUID> scheduledNotifications = new HashMap<>();
+    //private Map<Integer, UUID> scheduledNotifications = new HashMap<>();
+    //private Map<Integer, NotificationDTO> scheduledNotification = new
     /**
      * Initializes the service. Creates a notification channel if the device is running
      * Android Oreo (API 26) or above. Channels are mandatory for notifications on these versions.
@@ -61,26 +64,38 @@ public class LocalNotificationsService extends UnityService{
             )
             .build();
 
+        //create a DTO to keep track of the scheduled notification
+        NotificationDTO dto = new NotificationDTO(
+                notificationWork.getId(),
+                Utils.getTitle(id),
+                Utils.getText(id),
+                Utils.getIcon(id),
+                //get the current time in milliseconds
+                SystemClock.elapsedRealtime(),
+                //get the schedulation time by adding n minutes in milliseconds
+                SystemClock.elapsedRealtime() + ((long) id * 60 * 1000)
+        );
+
         //cache reference to the scheduledNotification list
-        scheduledNotifications.put(id, notificationWork.getId());
+        NotificationStore.addNotification(id, dto);
         // Enqueue the work request to WorkManager.
         WorkManager.getInstance(_unityActivity).enqueue(notificationWork);
+    }
+
+    public  String getNotificationAsString(){
+        return  NotificationStore.getAllNotificationsAsString();
     }
 
     //retrieve a scheduled work UUID and use it to delete the work
     public void deleteScheduledNotification(int id)
     {
-        UUID workId = scheduledNotifications.get(id);
+        UUID workId = NotificationStore.getWorkerUUID(id);
         WorkManager.getInstance(_unityActivity).cancelWorkById(workId);
-        scheduledNotifications.remove(id);
+        NotificationStore.removeNotification(id);
     }
 
     //iterate over scheduled notification work id and delete them all
     public void deleteAllScheduledNotifications() {
-        //create a list for iteration to avoid ConcurrentModificationException
-        List<Integer> ids = new ArrayList<>(scheduledNotifications.keySet());
-        for (Integer id : ids) {
-            deleteScheduledNotification(id);
-        }
+        NotificationStore.deleteAll();
     }
 }

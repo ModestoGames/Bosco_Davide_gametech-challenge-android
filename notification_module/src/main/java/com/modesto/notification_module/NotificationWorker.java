@@ -1,6 +1,5 @@
 package com.modesto.notification_module;
 
-import android.annotation.SuppressLint;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -45,7 +44,7 @@ public class NotificationWorker extends Worker {
             intent.putExtra("notification_title", Utils.getTitle(id));
             intent.putExtra("notification_text", Utils.getText(id));
             intent.putExtra("package_name", "com.modesto.notification_module");
-            intent.putExtra("icon", String.valueOf(Utils.getIcon(context, id)));
+            intent.putExtra("icon", String.valueOf(Utils.getIcon(id)));
             intent.putExtra("notification_timestamp", System.currentTimeMillis());
         }
 
@@ -61,7 +60,7 @@ public class NotificationWorker extends Worker {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, Constants.CHANNEL_ID)
                 .setContentTitle(Utils.getTitle(id))
                 .setContentText(Utils.getText(id))
-                .setSmallIcon(Utils.getIcon(context, id))
+                .setSmallIcon(Utils.getIcon(id))
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
 
