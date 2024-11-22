@@ -5,11 +5,14 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Build;
+import android.os.Debug;
 import android.os.SystemClock;
 
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -64,6 +67,8 @@ public class LocalNotificationsService extends UnityService{
             return;
         }
 
+        //when new sorting and old sorting are set if there are difference
+        //reschedule notification
         if(!Utils.arraysHaveSameItems(this.oldSortingOrder, this.newSortingOrder))
             switchNotificationSchedules();
     }
@@ -72,10 +77,10 @@ public class LocalNotificationsService extends UnityService{
         return NotificationStore.scheduledNotifications;
     }
 
-    public NotificationDTO scheduleNotification(int id, int delayMinutes) {
+    public NotificationDTO scheduleNotification(int id, int delaySeconds) {
         // Create a one-time work request with the delay specified.
         OneTimeWorkRequest notificationWork = new OneTimeWorkRequest.Builder(NotificationWorker.class)
-            .setInitialDelay(delayMinutes, TimeUnit.MINUTES)
+            .setInitialDelay(delaySeconds, TimeUnit.SECONDS)
             .setInputData(
                 new androidx.work.Data.Builder()
                         .putInt("id", id)
@@ -92,7 +97,7 @@ public class LocalNotificationsService extends UnityService{
                 //get the current time in milliseconds
                 SystemClock.elapsedRealtime(),
                 //get the schedulation time by adding n minutes in milliseconds
-                SystemClock.elapsedRealtime() + ((long) id * 60 * 1000)
+                SystemClock.elapsedRealtime() + ((long) delaySeconds * 1000)
         );
 
         //cache reference to the scheduledNotification list
@@ -124,28 +129,24 @@ public class LocalNotificationsService extends UnityService{
     //Switch
     private void switchNotificationSchedules() {
 
-        // Itera attraverso gli array per identificare le modifiche
-        for (int i = 0; i < this.oldSortingOrder.length; i++) {
-            int oldId = this.oldSortingOrder[i];
-            int newId = this.newSortingOrder[i];
+        //create a list to store the old remaining times
+        List<Long> remainingTime = new ArrayList<>();
 
-            if (oldId != newId) {
-                // Recupera i DTO delle notifiche che cambiano posizione
-                NotificationDTO oldNotification = NotificationStore.getNotification(oldId);
-                NotificationDTO newNotification = NotificationStore.getNotification(newId);
+        //cycle through map and store them
+        for (Map.Entry<Integer, NotificationDTO> entry : NotificationStore.scheduledNotifications.entrySet()) {
+            long schedulationTime = entry.getValue().getSchedulationTime();
+            long remainingMillisec = schedulationTime - SystemClock.elapsedRealtime();
+            remainingTime.add(remainingMillisec);
+        }
 
-                // Calcola i millisecondi rimanenti per ciascuna
-                long oldRemainingMilliseconds = oldNotification.getSchedulationTime() - SystemClock.elapsedRealtime();
-                long newRemainingMilliseconds = newNotification.getSchedulationTime() - SystemClock.elapsedRealtime();
+        //delete all the current schedules notification
+        for(int i = 0; i < oldSortingOrder.length; i++){
+            deleteScheduledNotification(oldSortingOrder[i]);
+        }
 
-                // Elimina le notifiche vecchie
-                deleteScheduledNotification(oldId);
-                deleteScheduledNotification(newId);
-
-                // Rischedula le notifiche con le posizioni scambiate
-                reScheduleNotification(newId, oldRemainingMilliseconds);
-                reScheduleNotification(oldId, newRemainingMilliseconds);
-            }
+        //reschedule all notification with the same as previous
+        for(int i = 0; i < newSortingOrder.length; i++){
+            reScheduleNotification(newSortingOrder[i], remainingTime.get(i));
         }
     }
 

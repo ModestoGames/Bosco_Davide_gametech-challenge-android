@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+//This class keep track of all the currently scheduled notifications
 public class NotificationStore {
     public static Map<Integer, NotificationDTO> scheduledNotifications = new HashMap<>();
 
