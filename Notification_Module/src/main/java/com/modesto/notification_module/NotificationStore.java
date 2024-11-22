@@ -9,6 +9,7 @@ import java.util.UUID;
 public class NotificationStore {
     public static Map<Integer, NotificationDTO> scheduledNotifications = new HashMap<>();
 
+
     public  static NotificationDTO getNotification(int id){
         return scheduledNotifications.get(id);
     }

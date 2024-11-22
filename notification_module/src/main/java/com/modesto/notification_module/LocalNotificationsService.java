@@ -6,13 +6,10 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Build;
 import android.os.SystemClock;
-import android.util.Log;
 
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -26,6 +23,9 @@ public class LocalNotificationsService extends UnityService{
     public LocalNotificationsService(Activity unityActivity) {
         super(unityActivity);
     }
+
+    private int[] oldSortingOrder;
+    private int[] newSortingOrder;
 
     /**
      * Initializes the service. Creates a notification channel if the device is running
@@ -49,6 +49,27 @@ public class LocalNotificationsService extends UnityService{
             NotificationManager manager = (NotificationManager) _unityActivity.getSystemService(Context.NOTIFICATION_SERVICE);
             manager.createNotificationChannel(channel);
         }
+    }
+
+    public  void setOldSorting(int[] oldSorting){
+        this.oldSortingOrder = oldSorting;
+    }
+
+    public void setNewSorting(int[] newSorting) {
+        this.newSortingOrder = newSorting;
+
+        if(oldSortingOrder.length <= 0) {
+            this.oldSortingOrder = null;
+            this.newSortingOrder = null;
+            return;
+        }
+
+        if(!Utils.arraysHaveSameItems(this.oldSortingOrder, this.newSortingOrder))
+            switchNotificationSchedules();
+    }
+
+    public Map<Integer, NotificationDTO> getCurrentNotifications(){
+        return NotificationStore.scheduledNotifications;
     }
 
     public NotificationDTO scheduleNotification(int id, int delayMinutes) {
@@ -81,13 +102,13 @@ public class LocalNotificationsService extends UnityService{
         return dto;
     }
 
-
-
+    //return system time to update Unity UI
     public long getCurrentSystemTime()
     {
         return SystemClock.elapsedRealtime();
     }
 
+    //debug method
     public  String getNotificationAsString(){
         return  NotificationStore.getAllNotificationsAsString();
     }
@@ -100,21 +121,32 @@ public class LocalNotificationsService extends UnityService{
         NotificationStore.removeNotification(id);
     }
 
-    public void switchNotificationSchedule(int startIndex, int destinationIndex)
-    {
-        //tiro su i dto startIndex e destIndex (es: 1 - 4)
-        NotificationDTO dto1 = NotificationStore.getNotification(startIndex);
-        NotificationDTO dto2 = NotificationStore.getNotification(destinationIndex);
+    //Switch
+    private void switchNotificationSchedules() {
 
-        long dto1RemainingMilliseconds = dto1.getSchedulationTime() - dto1.getCreationTime();
-        long dto2RemainingMilliseconds = dto2.getSchedulationTime() - dto2.getCreationTime();
+        // Itera attraverso gli array per identificare le modifiche
+        for (int i = 0; i < this.oldSortingOrder.length; i++) {
+            int oldId = this.oldSortingOrder[i];
+            int newId = this.newSortingOrder[i];
 
-        //elimino work e dto con indice 1 - 4
-        deleteScheduledNotification(startIndex);
-        deleteScheduledNotification(destinationIndex);
+            if (oldId != newId) {
+                // Recupera i DTO delle notifiche che cambiano posizione
+                NotificationDTO oldNotification = NotificationStore.getNotification(oldId);
+                NotificationDTO newNotification = NotificationStore.getNotification(newId);
 
-        reScheduleNotification(destinationIndex, dto1RemainingMilliseconds);
-        reScheduleNotification(startIndex, dto2RemainingMilliseconds);
+                // Calcola i millisecondi rimanenti per ciascuna
+                long oldRemainingMilliseconds = oldNotification.getSchedulationTime() - SystemClock.elapsedRealtime();
+                long newRemainingMilliseconds = newNotification.getSchedulationTime() - SystemClock.elapsedRealtime();
+
+                // Elimina le notifiche vecchie
+                deleteScheduledNotification(oldId);
+                deleteScheduledNotification(newId);
+
+                // Rischedula le notifiche con le posizioni scambiate
+                reScheduleNotification(newId, oldRemainingMilliseconds);
+                reScheduleNotification(oldId, newRemainingMilliseconds);
+            }
+        }
     }
 
     public void reScheduleNotification(int id, long delayMilliseconds) {

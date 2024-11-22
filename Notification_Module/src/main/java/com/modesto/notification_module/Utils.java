@@ -58,4 +58,20 @@ public class Utils {
         Resources resources = context.getResources();
         return BitmapFactory.decodeResource(resources, iconId);
     }
+
+    public static boolean arraysHaveSameItems(int[] array1, int[] array2) {
+        // Controlla se gli array hanno lunghezze diverse
+        if (array1.length != array2.length) {
+            return false;
+        }
+
+        // Confronta elemento per elemento
+        for (int i = 0; i < array1.length; i++) {
+            if (array1[i] != array2[i]) {
+                return false; // Esce immediatamente se trova una differenza
+            }
+        }
+
+        return true; // Restituisce true se tutti gli elementi corrispondono
+    }
 }
