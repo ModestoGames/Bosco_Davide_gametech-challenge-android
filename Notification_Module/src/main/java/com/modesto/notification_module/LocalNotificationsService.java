@@ -27,6 +27,7 @@ public class LocalNotificationsService extends UnityService{
         super(unityActivity);
     }
 
+    //array used to store sorting orders for rescheduling
     private int[] oldSortingOrder;
     private int[] newSortingOrder;
 
@@ -54,6 +55,13 @@ public class LocalNotificationsService extends UnityService{
         }
     }
 
+    //GET & SET
+    //return system time to update Unity UI
+    public long getCurrentSystemTime()
+    {
+        return SystemClock.elapsedRealtime();
+    }
+
     public  void setOldSorting(int[] oldSorting){
         this.oldSortingOrder = oldSorting;
     }
@@ -77,29 +85,12 @@ public class LocalNotificationsService extends UnityService{
         return NotificationStore.scheduledNotifications;
     }
 
+    //default method to schedule notification from unity
     public NotificationDTO scheduleNotification(int id, int delaySeconds) {
         // Create a one-time work request with the delay specified.
-        OneTimeWorkRequest notificationWork = new OneTimeWorkRequest.Builder(NotificationWorker.class)
-            .setInitialDelay(delaySeconds, TimeUnit.SECONDS)
-            .setInputData(
-                new androidx.work.Data.Builder()
-                        .putInt("id", id)
-                        .build()
-            )
-            .build();
-
+        OneTimeWorkRequest notificationWork = createNotificationWorkRequest(id, delaySeconds, TimeUnit.SECONDS);
         //create a DTO to keep track of the scheduled notification
-        NotificationDTO dto = new NotificationDTO(
-                notificationWork.getId(),
-                Utils.getTitle(id),
-                Utils.getText(id),
-                Utils.getIcon(id),
-                //get the current time in milliseconds
-                SystemClock.elapsedRealtime(),
-                //get the schedulation time by adding n minutes in milliseconds
-                SystemClock.elapsedRealtime() + ((long) delaySeconds * 1000)
-        );
-
+        NotificationDTO dto = createNotificationDTO(id, notificationWork.getId(), (long) delaySeconds * 1000);
         //cache reference to the scheduledNotification list
         NotificationStore.addNotification(id, dto);
         // Enqueue the work request to WorkManager.
@@ -107,15 +98,42 @@ public class LocalNotificationsService extends UnityService{
         return dto;
     }
 
-    //return system time to update Unity UI
-    public long getCurrentSystemTime()
-    {
-        return SystemClock.elapsedRealtime();
+    public void rescheduleNotification(int id, long delayMilliseconds) {
+        OneTimeWorkRequest notificationWork = createNotificationWorkRequest(id, delayMilliseconds, TimeUnit.MILLISECONDS);
+        NotificationDTO dto = createNotificationDTO(id, notificationWork.getId(), delayMilliseconds);
+        //cache reference to the scheduledNotification list
+        NotificationStore.addNotification(id, dto);
+        // Enqueue the work request to WorkManager.
+        WorkManager.getInstance(_unityActivity).enqueue(notificationWork);
     }
 
-    //debug method
-    public  String getNotificationAsString(){
-        return  NotificationStore.getAllNotificationsAsString();
+    private OneTimeWorkRequest createNotificationWorkRequest(int id, long delay, TimeUnit timeUnit){
+        // Create a one-time work request with the delay specified.
+        OneTimeWorkRequest notificationWork = new OneTimeWorkRequest.Builder(NotificationWorker.class)
+                .setInitialDelay(delay, timeUnit)
+                .setInputData(
+                        new androidx.work.Data.Builder()
+                                .putInt(Constants.ID, id)
+                                .build()
+                )
+                .build();
+
+        return notificationWork;
+    }
+
+    private NotificationDTO createNotificationDTO(int id, UUID workId, long duration){
+        NotificationDTO dto = new NotificationDTO(
+                workId,
+                Utils.getTitle(id),
+                Utils.getText(id),
+                Utils.getIcon(id),
+                //get the current time in milliseconds
+                SystemClock.elapsedRealtime(),
+                //get the schedulation time by adding n minutes in milliseconds
+                SystemClock.elapsedRealtime() + duration
+        );
+
+        return  dto;
     }
 
     //retrieve a scheduled work UUID and use it to delete the work
@@ -126,7 +144,9 @@ public class LocalNotificationsService extends UnityService{
         NotificationStore.removeNotification(id);
     }
 
-    //Switch
+    //Reschedule notification order by resetting remaining times
+    //apparently workmanager work can't be rescheduled
+    //so delete all and reschedule the notifications with new sorting
     private void switchNotificationSchedules() {
 
         //create a list to store the old remaining times
@@ -146,35 +166,11 @@ public class LocalNotificationsService extends UnityService{
 
         //reschedule all notification with the same as previous
         for(int i = 0; i < newSortingOrder.length; i++){
-            reScheduleNotification(newSortingOrder[i], remainingTime.get(i));
+            rescheduleNotification(newSortingOrder[i], remainingTime.get(i));
         }
-    }
 
-    public void reScheduleNotification(int id, long delayMilliseconds) {
-        OneTimeWorkRequest notificationWork = new OneTimeWorkRequest.Builder(NotificationWorker.class)
-                .setInitialDelay(delayMilliseconds, TimeUnit.MILLISECONDS)
-                .setInputData(
-                        new androidx.work.Data.Builder()
-                                .putInt("id", id)
-                                .build()
-                )
-                .build();
-
-        //create a DTO to keep track of the scheduled notification
-        NotificationDTO dto = new NotificationDTO(
-                notificationWork.getId(),
-                Utils.getTitle(id),
-                Utils.getText(id),
-                Utils.getIcon(id),
-                //get the current time in milliseconds
-                SystemClock.elapsedRealtime(),
-                //get the schedulation time by adding remaining milliseconds
-                SystemClock.elapsedRealtime() + delayMilliseconds
-        );
-
-        //cache reference to the scheduledNotification list
-        NotificationStore.addNotification(id, dto);
-        // Enqueue the work request to WorkManager.
-        WorkManager.getInstance(_unityActivity).enqueue(notificationWork);
+        //dispose sorting order arrays
+        this.oldSortingOrder = null;
+        this.newSortingOrder = null;
     }
 }

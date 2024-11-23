@@ -29,7 +29,7 @@ public class NotificationWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        int id = getInputData().getInt("id", 0);
+        int id = getInputData().getInt(Constants.ID, 0);
         showNotification(getApplicationContext(), id);
         return Result.success();
     }
@@ -40,12 +40,12 @@ public class NotificationWorker extends Worker {
         if (intent != null) {
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             // Add extra data for Unity integration
-            intent.putExtra("notification_id", id);
-            intent.putExtra("notification_title", Utils.getTitle(id));
-            intent.putExtra("notification_text", Utils.getText(id));
+            intent.putExtra(Constants.NOTIFICATION_ID, id);
+            intent.putExtra(Constants.NOTIFICATION_TITLE, Utils.getTitle(id));
+            intent.putExtra(Constants.NOTIFICATION_TEXT, Utils.getText(id));
         }
 
-        // Create a PendingIntent for the notification's tap action
+        // Create a PendingIntent for the notifications' tap action
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 context,
                 id,

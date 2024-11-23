@@ -8,8 +8,8 @@ import java.util.UUID;
 
 //This class keep track of all the currently scheduled notifications
 public class NotificationStore {
+    //each notification is stored in a map with an int id as key
     public static Map<Integer, NotificationDTO> scheduledNotifications = new HashMap<>();
-
 
     public  static NotificationDTO getNotification(int id){
         return scheduledNotifications.get(id);
@@ -27,6 +27,7 @@ public class NotificationStore {
         scheduledNotifications.remove(id);
     }
 
+    //util method to print all notifications
     public static String getAllNotificationsAsString() {
         StringBuilder sb = new StringBuilder();
 
